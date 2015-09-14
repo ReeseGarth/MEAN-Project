@@ -1,20 +1,22 @@
-var express = require('express');
-var path = require('path');
-var favicon = require('serve-favicon');
-var logger = require('morgan');
-var cookieParser = require('cookie-parser');
-var bodyParser = require('body-parser');
+var express = require('express'), 
+    path = require('path'),
+    favicon = require('serve-favicon'),
+    logger = require('morgan'),
+    cookieParser = require('cookie-parser'),
+    bodyParser = require('body-parser'),
+    http = require('http'),
+    mongoose = require('mongoose');
+
+require('./models/Posts');
+require('./models/Comments');
+
+mongoose.connect('mongodb://localhost/techNews');
 
 var routes = require('./routes/index');
 var users = require('./routes/users');
 
-var mongoose = require('mongoose');
-require('./models/Posts');
-require('./models/Comments');
-
-mongoose.connect('mongodb://localhost/news');
-
 var app = express();
+app.listen(3000);
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -62,5 +64,8 @@ app.use(function(err, req, res, next) {
   });
 });
 
+//http.createServer(function (req, res) {
+//  res.writeHead(200, {'Content-Type': 'text/plain'});
+//}).listen(3000, '127.0.0.1');
 
 module.exports = app;
