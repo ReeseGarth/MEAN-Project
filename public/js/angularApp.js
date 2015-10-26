@@ -7,7 +7,12 @@ angular.module('techNews', ['ui.router'])
 			.state('home', {
 				url: '/home',
 				templateUrl: '/home.html',
-				controller: 'MainCtrl'
+				controller: 'MainCtrl',
+				resolve: {
+					postPromise: ['posts', function(posts) {
+						return posts.getAll();
+					}]
+				}
 			})
 			.state('posts', {
 				url: '/posts/{id}',
@@ -17,12 +22,36 @@ angular.module('techNews', ['ui.router'])
 
 		$urlRouterProvider.otherwise('home');
 	}])
-.factory('posts', [function(){
-	var service = {
+.factory('posts', ['$http', function($http){
+	var o = {
 		posts: [{title: 'hello', link:'', upvotes:0}]
 	};
 
-	return service;
+	o.getAll = function () {
+		return $http.get('/posts').success(function(data) {
+			angular.copy(data, o.posts);
+		});
+	};
+
+	o.get = function(id) {
+		return $http.get('/posts/' + id).then(function(res) {
+			return res.data;
+		});
+	};
+
+	o.create = function(post) {
+		return $http.post('/posts', post).success(function(data) {
+			o.posts.push(data);
+		});
+	};
+
+	o.upvote = function(post) {
+		return $http.post('/posts/' + post._id + '/upvote').success(function(data) {
+			post.upvotes += 1;
+		});
+	};
+
+	return o;
 	}])
 .controller('MainCtrl', [
 	'$scope',
@@ -35,23 +64,18 @@ angular.module('techNews', ['ui.router'])
 				return;
 			}
 
-			$scope.posts.push({
-				title: $scope.title, 
-				link: $scope.link,
-				upvotes: 0,
-				comments: [
-					{author: 'Joe', body: 'Cool Post!', upvotes: 0},
-					{author: 'Bob', body: 'Great idea but everything is wrong!', upvotes: 0}
-				]
+			posts.create({
+				title: $scope.title,
+				link: $scope.link
 			});
 
 			$scope.title = '';
 			$scope.link = '';
-		}
+		};
 
 		$scope.incrementUpvotes = function(post) {
-			post.upvotes += 1;
-		}
+			posts.upvote(post);
+		};
 
 	}])
 .controller('PostsCtrl', [
