@@ -37,7 +37,12 @@ angular.module('techNews', ['ui.router'])
 			.state('posts', {
 				url: '/posts/{id}',
 				templateUrl: '/posts.html',
-				controller: 'PostsCtrl'
+				controller: 'PostsCtrl',
+				resolve: {
+					post: ['$stateParams', 'posts', function($stateParams, posts) {
+						return posts.get($stateParams.id);
+					}]
+				}
 			});
 
 		$urlRouterProvider.otherwise('home');
@@ -94,7 +99,7 @@ angular.module('techNews', ['ui.router'])
 	return auth;
 }])
 
-.factory('posts', ['$http', function($http){
+.factory('posts', ['$http', 'auth', function($http, auth){
 	var o = {
 		posts: [{title: 'hello', link:'', upvotes:0}]
 	};
@@ -112,14 +117,32 @@ angular.module('techNews', ['ui.router'])
 	};
 
 	o.create = function(post) {
-		return $http.post('/posts', post).success(function(data) {
+		return $http.post('/posts', post, {
+			headers: {Authorization: 'Bearer ' + auth.getToken()}
+		}).success(function(data) {
 			o.posts.push(data);
 		});
 	};
 
 	o.upvote = function(post) {
-		return $http.post('/posts/' + post._id + '/upvote').success(function(data) {
+		return $http.post('/posts/' + post._id + '/upvote', null, {
+			headers: {Authorization: 'Bearer ' + auth.getToken()}
+		}).success(function(data) {
 			post.upvotes += 1;
+		});
+	};
+
+	o.addComment = function(id, comment) {
+		return $http.post('/posts/' + id + '/comments', comment, {
+			headers: {Authorization: 'Bearer ' + auth.getToken()}
+		});
+	};
+
+	o.upvoteComment = function(post, comment) {
+		return $http.post('/posts/' + post._id + '/comments/' + comment._id + '/upvote', null, {
+			headers: {Authorization: 'Bearer ' + auth.getToken()}
+		}).success(function(data) {
+			comment.upvotes += 1;
 		});
 	};
 
@@ -129,8 +152,10 @@ angular.module('techNews', ['ui.router'])
 .controller('MainCtrl', [
 	'$scope',
 	'posts',
-	function ($scope, posts) {
+	'auth',
+	function ($scope, posts, auth) {
 		$scope.posts = posts.posts;
+		$scope.isLoggedIn = auth.isLoggedIn;
 
 		$scope.addPost = function() {
 			if (!$scope.title || $scope.title === '') {
@@ -153,26 +178,29 @@ angular.module('techNews', ['ui.router'])
 	}])
 .controller('PostsCtrl', [
 	'$scope',
-	'$stateParams',
 	'posts',
-	function($scope, $stateParams, posts) {
-		$scope.post = posts.posts[$stateParams.id];
+	'post',
+	'auth',
+	function($scope, posts, post, auth) {
+		$scope.post = post;
+		$scope.isLoggedIn = auth.isLoggedIn;
 
 		$scope.addComment = function() {
 			if ($scope.body === '') { return; }
 
-			$scope.post.comments.push({
+			posts.addComment(post._id, {
 				body: $scope.body,
 				author: 'user',
-				upvotes: 0
+			}).success(function(comment) {
+				$scope.post.comments.push(comment);
 			});
 
-		$scope.body = '';
-		}
+			$scope.body = '';
+		};
 
 		$scope.incrementUpvotes = function(comment) {
-			comment.upvotes += 1;
-		}
+			posts.upvoteComment(post, comment);
+		};
 
 	}])
 

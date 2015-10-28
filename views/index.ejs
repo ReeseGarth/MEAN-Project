@@ -89,7 +89,7 @@
 				<a href="#/posts/{{post._id}}">Comments</a>
 			</span>
 		</div>
-		<form ng-submit="addPost()">
+		<form ng-submit="addPost()" ng-show="isLoggedIn()" style="margin-top:30px">
 			<h3>Add a New Post!</h3>
 
 			<div class="form-group">
@@ -98,6 +98,9 @@
 			</div>
 			<button type="submit" class="btn btn-primary">Post</button>
 		</form>
+		<div ng-hide="isLoggedIn()">
+			<h3>You need to <a href="/#/login">login</a> or <a href="/#/register">register</a> to create a post.</h3>
+		</div>
 	</script>
 	<script type="text/ng-template" id="/posts.html">
 		<div class="page-header">
@@ -117,7 +120,7 @@
 				{{comment.body}}
 			</span>
 		</div>
-		<form ng-submit="addComment()">
+		<form ng-submit="addComment()" ng-show="isLoggedIn()" style="margin-top: 30px">
 			<h4>Add a Comment!</h4>
 
 			<div class="form-group">
@@ -125,6 +128,9 @@
 			</div>
 			<button type="submit" class="btn btn-primary">Post</button>
 		</form>
+		<div ng-hide="isLoggedIn()">
+			<h3>You need to <a href="/#/login">login</a> or <a href="/#/register">register</a> to comment on a post.</h3>
+		</div>
 	</script>
 </body>
 </html>
